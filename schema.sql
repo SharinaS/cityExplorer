@@ -1,5 +1,4 @@
 DROP TABLE IF EXISTS locations;
-
 CREATE TABLE locations (
     id SERIAL PRIMARY KEY,
     search_query VARCHAR(255),
@@ -8,8 +7,8 @@ CREATE TABLE locations (
     longitude NUMERIC(10,7)
 );
 
-DROP TABLE IF EXISTS weather;
 
+DROP TABLE IF EXISTS weather;
 CREATE TABLE weather (
     id SERIAL PRIMARY KEY,
     search_query VARCHAR(255),
@@ -18,15 +17,16 @@ CREATE TABLE weather (
     created_at BIGINT
 );
 
-DROP TABLE IF EXISTS events;
 
+DROP TABLE IF EXISTS events;
 CREATE TABLE events (
     id SERIAL PRIMARY KEY,
     search_query VARCHAR(255),
     link VARCHAR(255),
     name VARCHAR(255),
     event_date VARCHAR(255),
-    summary VARCHAR
+    summary VARCHAR,
+    created_at BIGINT
 );
 
 DROP TABLE IF EXISTS movies;
@@ -42,6 +42,7 @@ CREATE TABLE movies (
   created_at BIGINT
 );
 
+
 DROP TABLE IF EXISTS reviews;
 CREATE TABLE reviews(
   id SERIAL PRIMARY KEY,
@@ -53,7 +54,3 @@ CREATE TABLE reviews(
   url VARCHAR,
   created_at BIGINT
 );
-
-
-
-
