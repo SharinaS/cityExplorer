@@ -18,6 +18,7 @@ client.on('error', (error) => console.error(error));
 
 const PORT = process.env.PORT;
 
+// ===== LOCATION ======
 function Location(query, format, lat, lng) {
   this.search_query = query;
   this.formatted_query = format;
@@ -68,6 +69,7 @@ app.get('/location', (request, response) => {
 })
 
 
+// ===== WEATHER ======
 function Day(summary, time) {
   this.forecast = summary;
   this.time = new Date(time * 1000).toDateString();
@@ -124,21 +126,40 @@ app.get('/weather', (request, response) => {
 
 })
 
-// constructor function for eventbrite
+
+// ===== EVENTS ======
+
 function Events(link, name, date, summary) {
   this.link = link;
   this.name = name;
   this.event_date = new Date(date).toDateString();
   this.summary = summary;
+  this.created_at = Date.now()
 }
 // set up an app.get for /eventbrite
 app.get('/events', (request, response) => {
+
   let eventData = request.query.data;
   //console.log('event data', eventData);
+
+  // Find in the database where search_query is what the user put in:
   client.query(`SELECT * FROM events WHERE search_query=$1`, [eventData.search_query]).then(sqlResult => {
 
-    if (sqlResult.rowCount > 0) {
+    let notTooOld = true;
+    if(sqlResult.rowCount > 0) {
+      const age = sqlResult.rows[0].created_at;
+      const ageInSeconds = (Date.now() - age) / 1000;
+      if(ageInSeconds > 10) {
+        notTooOld = false;
+        client.query(`DELETE FROM events WHERE search_query=$1`, [eventData.search_query]);
+      }
+      console.log('events age in seconds', ageInSeconds);
+    }
+    // if the data exists and it's within the time frame allowed, send the data to the front end from the database:
+    if (sqlResult.rowCount > 0 && notTooOld) {
       response.send(sqlResult.rows);
+     
+    // otherwise, get data from the API, since the data is either too old, or it's not there at all in the database:  
     } else {
 
       const eventUrlData =
@@ -150,26 +171,27 @@ app.get('/events', (request, response) => {
 
         const eventBody = responseFromSuper.body.events;
 
+        // Limit the number of events to 20, and make new instances of those events:
         const dailyEvents = eventBody.slice(0, 20).map(day => new Events(day.url, day.name.text, day.start.local, day.description.text));
 
+        // Iterate over dailyEvents, and add events into the database:
         dailyEvents.forEach(event => {
-          const sqlQueryInsert = `INSERT INTO events (search_query, link, name, event_date, summary) VALUES ($1,$2,$3,$4,$5);`;
-          const sqlValueArr = [eventData.search_query, event.link, event.name, event.date, event.summary];
+          const sqlQueryInsert = `INSERT INTO events (search_query, link, name, event_date, summary, created_at) VALUES ($1,$2,$3,$4,$5,$6);`;
+          const sqlValueArr = [eventData.search_query, event.link, event.name, event.date, event.summary, event.created_at];
           client.query(sqlQueryInsert, sqlValueArr);
         })
-
         response.send(dailyEvents);
+
       }).catch(error => {
         response.status(500).send(error.message);
         console.error(error);
 
       })
-
     }
   })
 })
 
-// MOVIE DB
+// ===== MOVIES ======
 
 function Movie(title, overview, average_votes, image_url, popularity, released_on) {
   this.title = title;
@@ -228,7 +250,7 @@ function getMovies(request, response) {
   })
 }
 
-// YELP
+// ===== YELP ======
 function Getyelp(name, image_url, price, rating, url) {
   this.name = name;
   this.image_url = image_url;
@@ -268,6 +290,7 @@ function getReviews(request, response) {
 
       const api_url = `https://api.yelp.com/v3/businesses/search?latitude=${reviewData.latitude}&longitude=${reviewData.longitude}`;
 
+      // To authenticate API calls with the API Key, set the Authorization HTTP header value as Bearer API_KEY, per YELP. 
       superagent.get(api_url).set('Authorization', `Bearer ${process.env.YELP_API_KEY}`).then(responseFromSuper => {
         const yelpData = responseFromSuper.body;
         //console.log(yelpData)
