@@ -318,4 +318,28 @@ function getReviews(request, response) {
 }
 
 
+// ===== TRAILS ======
+
+// Make API call with superagent
+// Set up table in database and build out code in JS
+// Add in cache invalidation
+
+function Trails (name, location, length, stars, star_votes, summary, trail_url, conditions, condition_date, condition_time) {
+  this.name = name;
+  this.location = location;
+  this.length = length;
+  this.stars = stars;
+  this.star_votes = star_votes;
+  this.summary = summary;
+  this.trail_url = trail_url;
+  this.conditions = conditions;
+  this.condition_date = condition_date;
+  this.condition_time = condition_time;   // time is combined with date in API... looks like it's at [1], while date is at [0]
+  //this.created_at = Date.now();
+}
+app.get('/trails', getTrails);
+
+function getTrails(request, response) {
+  const trailData = request.query.data;
+
 app.listen(PORT, () => { console.log(`app is up on PORT ${PORT}`) });
