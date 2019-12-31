@@ -39,7 +39,7 @@ This application was designed with
 * JavaScript
 * Express
 * SuperAgent 
-* PostGresSQL
+* PostGreSQL
 * Node.JS
 
 ## Change Log
